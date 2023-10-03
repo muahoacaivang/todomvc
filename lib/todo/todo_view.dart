@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'todo_controller.dart';
 
 class TodoPage extends StatelessWidget {
@@ -30,24 +30,63 @@ class TodoPage extends StatelessWidget {
                     focusNode: controller.descFocusNode,
                     textInputAction:TextInputAction.next,
                     onSubmitted: (string){
-                      controller.add(string);
+                      controller.addTodo(string);
                     },
                   ),
                 ),
                 Expanded(
-                    child: controller.todoModels.length>0?ListView.separated(
-                        separatorBuilder: (context, index) {
-                          return const Divider(
-                            height: 1,
-                          );
-                        },
-                        itemBuilder: (BuildContext context, int index) {
-                          return Container(
-                            padding: EdgeInsets.all(10),
-                            child: Text(controller.todoModels[index].todoDesc),
-                          );
-                        },
-                        itemCount:controller.todoModels.length
+                    child: controller.filterModels.length>0?SlidableAutoCloseBehavior(
+                        child: ListView.separated(
+                            separatorBuilder: (context, index) {
+                              return const Divider(
+                                height: 1,
+                              );
+                            },
+                            itemBuilder: (BuildContext context, int index) {
+                              return Slidable(
+                                  key: ValueKey("$index"),
+                                  endActionPane: ActionPane(
+                                    motion: ScrollMotion(),
+                                    children: [
+                                      SlidableAction(
+                                        onPressed: (context) {
+                                          Slidable.of(context)!.close();
+                                          controller.deleteTodo(controller.filterModels[index]);
+                                        },
+
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.delete,
+                                        label: 'Delete',
+                                      ),
+
+                                    ],
+                                  ),
+                                  child:Container(
+                                      padding: EdgeInsets.all(10),
+                                      child: Row(
+                                        children: [
+                                          Checkbox(
+                                            value: controller.filterModels[index].isDone,
+                                            onChanged: (value){
+                                              controller.completeTodo(controller.filterModels[index],value!);
+                                            },
+                                            activeColor: Colors.grey,
+                                          ),
+
+                                          Text(controller.filterModels[index].todoDesc,
+                                            style: TextStyle(
+                                                decoration: controller.filterModels[index].isDone?TextDecoration.lineThrough:null,
+                                                color: controller.filterModels[index].isDone?Colors.grey:Colors.black
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                  )
+                              );
+                            },
+                            itemCount:controller.filterModels.length
+                        )
                     ):Center(child: Text('nothing',style: TextStyle(color: Colors.grey),),)
                 ),
                 SafeArea(
@@ -59,9 +98,9 @@ class TodoPage extends StatelessWidget {
 
                             Radio(
                               value: 0,
-                              groupValue: controller.showType,
+                              groupValue: controller.currType,
                               onChanged: (value) {
-
+                                controller.changeShowType(value!);
                               },
                             ),
                             Text("All"),
@@ -69,9 +108,9 @@ class TodoPage extends StatelessWidget {
 
                             Radio(
                               value: 1,
-                              groupValue: controller.showType,
+                              groupValue: controller.currType,
                               onChanged: (value) {
-
+                                controller.changeShowType(value!);
                               },
                             ),
                             Text("Active"),
@@ -79,9 +118,9 @@ class TodoPage extends StatelessWidget {
 
                             Radio(
                               value: 2,
-                              groupValue: controller.showType,
+                              groupValue: controller.currType,
                               onChanged: (value) {
-
+                                controller.changeShowType(value!);
                               },
                             ),
                             Text("Completed"),
@@ -90,10 +129,10 @@ class TodoPage extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Text('items left'),
+                            Text(controller.leftCount.toString() + ' items left'),
                             TextButton(
                                 onPressed: (){
-
+                                  controller.clearComplete();
                                 },
                                 child: Text('Clear completed')
                             )
